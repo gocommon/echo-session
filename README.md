@@ -1,3 +1,7 @@
+echo-session
+
+copy from <https://github.com/astaxie/beego/tree/master/session>
+
 session
 ==============
 
@@ -15,71 +19,9 @@ As of now this session manager support memory, file, Redis and MySQL.
 
 ## How to use it?
 
-First you must import it
-
-	import (
-		"github.com/gocommon/echo-session"
-	)
-
-Then in you web app init the global session manager
-	
-	var globalSessions *session.Manager
-
-* Use **memory** as provider:
-
-		func init() {
-			globalSessions, _ = session.NewManager("memory", `{"cookieName":"gosessionid","gclifetime":3600}`)
-			go globalSessions.GC()
-		}
-
-* Use **file** as provider, the last param is the path where you want file to be stored:
-
-		func init() {
-			globalSessions, _ = session.NewManager("file",`{"cookieName":"gosessionid","gclifetime":3600,"ProviderConfig":"./tmp"}`)
-			go globalSessions.GC()
-		}
-
-* Use **Redis** as provider, the last param is the Redis conn address,poolsize,password:
-
-		func init() {
-			globalSessions, _ = session.NewManager("redis", `{"cookieName":"gosessionid","gclifetime":3600,"ProviderConfig":"127.0.0.1:6379,100,astaxie"}`)
-			go globalSessions.GC()
-		}
-		
-* Use **MySQL** as provider, the last param is the DSN, learn more from [mysql](https://github.com/go-sql-driver/mysql#dsn-data-source-name):
-
-		func init() {
-			globalSessions, _ = session.NewManager(
-				"mysql", `{"cookieName":"gosessionid","gclifetime":3600,"ProviderConfig":"username:password@protocol(address)/dbname?param=value"}`)
-			go globalSessions.GC()
-		}
-
-* Use **Cookie** as provider:
-
-		func init() {
-			globalSessions, _ = session.NewManager(
-				"cookie", `{"cookieName":"gosessionid","enableSetCookie":false,"gclifetime":3600,"ProviderConfig":"{\"cookieName\":\"gosessionid\",\"securityKey\":\"beegocookiehashkey\"}"}`)
-			go globalSessions.GC()
-		}
-
-
-Finally in the handlerfunc you can use it like this
-
-	func login(w http.ResponseWriter, r *http.Request) {
-		sess := globalSessions.SessionStart(w, r)
-		defer sess.SessionRelease(w)
-		username := sess.Get("username")
-		fmt.Println(username)
-		if r.Method == "GET" {
-			t, _ := template.ParseFiles("login.gtpl")
-			t.Execute(w, nil)
-		} else {
-			fmt.Println("username:", r.Form["username"])
-			sess.Set("username", r.Form["username"])
-			fmt.Println("password:", r.Form["password"])
-		}
-	}
-
+		e.Use(session.Middleware(session.MiddlewareConfig{
+			ManagerConfig: &session.ManagerConfig{Provider: "file", ProviderConfig: "./tmp"},
+		}))
 
 ## How to write own provider?
 
@@ -94,7 +36,7 @@ Maybe you will find the **memory** provider is a good example.
 		Get(key interface{}) interface{}      //get session value
 		Delete(key interface{}) error         //delete session value
 		SessionID() string                    //back current sessionID
-		SessionRelease(w http.ResponseWriter) // release the resource & save data to provider & return the data
+		SessionRelease(w *echo.Response) // release the resource & save data to provider & return the data
 		Flush() error                         //delete all data
 	}
 	
