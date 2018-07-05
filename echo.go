@@ -13,17 +13,20 @@ var (
 type (
 	// MiddlewareConfig MiddlewareConfig
 	MiddlewareConfig struct {
-		Skipper middleware.Skipper
-		Manager *Manager
+		Skipper       middleware.Skipper
+		ManagerConfig *ManagerConfig
 	}
 )
 
 // Middleware Middleware for echo only
 func Middleware(config MiddlewareConfig) echo.MiddlewareFunc {
 
-	if config.Manager == nil {
-		panic("MiddlewareConfig.Manager must be set")
+	manager, err := NewManager(config.ManagerConfig)
+	if err != nil {
+		panic(err)
 	}
+
+	go manager.GC()
 
 	if config.Skipper == nil {
 		config.Skipper = middleware.DefaultSkipper
@@ -35,7 +38,7 @@ func Middleware(config MiddlewareConfig) echo.MiddlewareFunc {
 				return next(c)
 			}
 
-			sess, err := config.Manager.SessionStart(c.Response(), c.Request())
+			sess, err := manager.SessionStart(c.Response(), c.Request())
 			if err != nil {
 				return err
 			}

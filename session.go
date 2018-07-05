@@ -85,6 +85,7 @@ func Register(name string, provide Provider) {
 
 // ManagerConfig define the session config
 type ManagerConfig struct {
+	Provider                string `json:"provider"`
 	CookieName              string `json:"cookieName"`
 	EnableSetCookie         bool   `json:"enableSetCookie,omitempty"`
 	Gclifetime              int64  `json:"gclifetime"`
@@ -102,6 +103,15 @@ type ManagerConfig struct {
 
 // PreManagerConfig default values
 func PreManagerConfig(cf *ManagerConfig) {
+
+	if cf == nil {
+		panic("ManagerConfig must be set")
+	}
+
+	if len(cf.Provider) == 0 {
+		panic("Provider must be set")
+	}
+
 	if len(cf.CookieName) == 0 {
 		cf.CookieName = "_GOSESSIONID"
 	}
@@ -144,13 +154,13 @@ type Manager struct {
 // 2. hashfunc  default sha1
 // 3. hashkey default beegosessionkey
 // 4. maxage default is none
-func NewManager(provideName string, cf *ManagerConfig) (*Manager, error) {
-	provider, ok := provides[provideName]
-	if !ok {
-		return nil, fmt.Errorf("session: unknown provide %q (forgotten import?)", provideName)
-	}
-
+func NewManager(cf *ManagerConfig) (*Manager, error) {
 	PreManagerConfig(cf)
+
+	provider, ok := provides[cf.Provider]
+	if !ok {
+		return nil, fmt.Errorf("session: unknown provide %q (forgotten import?)", cf.Provider)
+	}
 
 	if cf.EnableSidInHTTPHeader {
 		if cf.SessionNameInHTTPHeader == "" {
