@@ -307,11 +307,21 @@ func (manager *Manager) GC() {
 }
 
 // SessionRegenerateID Regenerate a session id for this SessionStore who's id is saving in http request.
-func (manager *Manager) SessionRegenerateID(w *echo.Response, r *http.Request) (session Store) {
-	sid, err := manager.sessionID()
-	if err != nil {
-		return
+func (manager *Manager) SessionRegenerateID(w *echo.Response, r *http.Request, updateSID ...string) (session Store) {
+	var (
+		sid string
+		err error
+	)
+
+	if len(updateSID) > 0 {
+		sid = updateSID[0]
+	} else {
+		sid, err = manager.sessionID()
+		if err != nil {
+			return
+		}
 	}
+
 	cookie, err := r.Cookie(manager.config.CookieName)
 	if err != nil || cookie.Value == "" {
 		//delete old cookie
