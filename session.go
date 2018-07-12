@@ -89,7 +89,7 @@ type ManagerConfig struct {
 	CookieName              string `json:"cookieName"`
 	EnableSetCookie         bool   `json:"enableSetCookie,omitempty"`
 	Gclifetime              int64  `json:"gclifetime"`
-	Maxlifetime             int64  `json:"maxLifetime"`
+	Maxlifetime             int64  `json:"maxLifetime"` // store session expire time
 	DisableHTTPOnly         bool   `json:"disableHTTPOnly"`
 	Secure                  bool   `json:"secure"`
 	CookieLifeTime          int    `json:"cookieLifeTime"`
@@ -185,14 +185,14 @@ func NewManager(cf *ManagerConfig) (*Manager, error) {
 	}, nil
 }
 
-// getSid retrieves session identifier from HTTP Request.
+// GetSid retrieves session identifier from HTTP Request.
 // First try to retrieve id by reading from cookie, session cookie name is configurable,
 // if not exist, then retrieve id from querying parameters.
 //
 // error is not nil when there is anything wrong.
 // sid is empty when need to generate a new session id
 // otherwise return an valid session id.
-func (manager *Manager) getSid(r *http.Request) (string, error) {
+func (manager *Manager) GetSid(r *http.Request) (string, error) {
 	cookie, errs := r.Cookie(manager.config.CookieName)
 	if errs != nil || cookie.Value == "" {
 		var sid string
@@ -223,7 +223,7 @@ func (manager *Manager) getSid(r *http.Request) (string, error) {
 // SessionStart generate or read the session id from http request.
 // if session id exists, return SessionStore with this id.
 func (manager *Manager) SessionStart(w *echo.Response, r *http.Request) (session Store, err error) {
-	sid, errs := manager.getSid(r)
+	sid, errs := manager.GetSid(r)
 	if errs != nil {
 		return nil, errs
 	}
